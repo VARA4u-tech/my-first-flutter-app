@@ -1,6 +1,20 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+import 'auth_service.dart';
+import 'auth_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Hive.initFlutter();
+  
+  // Initialize Firebase with proper platform-specific configuration
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  
   runApp(const MyApp());
 }
 
@@ -245,7 +259,22 @@ class MyApp extends StatelessWidget {
         // Scaffold Background Color
         scaffoldBackgroundColor: const Color(0xFFF5F5F5),
       ),
-      home: const TaskManagerScreen(),
+      home: StreamBuilder(
+        stream: AuthService().authStateChanges,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Scaffold(
+              body: Center(
+                child: CircularProgressIndicator(),
+              ),
+            );
+          }
+          if (snapshot.hasData && snapshot.data != null) {
+            return TaskManagerScreen(userId: snapshot.data!.uid);
+          }
+          return const AuthScreen();
+        },
+      ),
     );
   }
 }
@@ -323,6 +352,7 @@ extension TaskCategoryExtension on TaskCategory {
 // Task model class
 class Task {
   final String id;
+  final String userId;
   final String title;
   final String description;
   bool isCompleted;
@@ -330,15 +360,45 @@ class Task {
 
   Task({
     required this.id,
+    required this.userId,
     required this.title,
     required this.description,
     this.isCompleted = false,
     TaskCategory? category,
   }) : category = category ?? TaskCategory.personal;
+
+  // Convert Task to JSON
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'userId': userId,
+      'title': title,
+      'description': description,
+      'isCompleted': isCompleted,
+      'category': category.toString().split('.').last,
+    };
+  }
+
+  // Create Task from JSON
+  factory Task.fromJson(Map<String, dynamic> json) {
+    return Task(
+      id: json['id'] as String,
+      userId: json['userId'] as String,
+      title: json['title'] as String,
+      description: json['description'] as String,
+      isCompleted: json['isCompleted'] as bool? ?? false,
+      category: TaskCategory.values.firstWhere(
+        (e) => e.toString().split('.').last == json['category'],
+        orElse: () => TaskCategory.personal,
+      ),
+    );
+  }
 }
 
 class TaskManagerScreen extends StatefulWidget {
-  const TaskManagerScreen({super.key});
+  final String userId;
+
+  const TaskManagerScreen({super.key, required this.userId});
 
   @override
   State<TaskManagerScreen> createState() => _TaskManagerScreenState();
@@ -347,10 +407,12 @@ class TaskManagerScreen extends StatefulWidget {
 class _TaskManagerScreenState extends State<TaskManagerScreen>
     with TickerProviderStateMixin {
   final List<Task> tasks = [];
+  final List<Task> allTasks = []; // Keep track of all tasks from all users
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   TabController? _tabController;
   TaskCategory _selectedCategory = TaskCategory.personal;
+  late Box<dynamic> _taskBox;
 
   @override
   void initState() {
@@ -358,6 +420,32 @@ class _TaskManagerScreenState extends State<TaskManagerScreen>
     if (_tabController == null) {
       _tabController = TabController(length: 3, vsync: this);
     }
+    _loadTasks();
+  }
+
+  Future<void> _loadTasks() async {
+    _taskBox = await Hive.openBox('tasks');
+    final savedTasks = _taskBox.get('taskList', defaultValue: '[]') as String;
+    
+    if (savedTasks.isNotEmpty && savedTasks != '[]') {
+      final List<dynamic> jsonList = jsonDecode(savedTasks);
+      final loadedAllTasks = jsonList.map((json) => Task.fromJson(json as Map<String, dynamic>)).toList();
+      setState(() {
+        allTasks.clear();
+        allTasks.addAll(loadedAllTasks);
+        // Filter tasks by current user
+        tasks.clear();
+        tasks.addAll(allTasks.where((task) => task.userId == widget.userId).toList());
+      });
+    }
+  }
+
+  Future<void> _saveTasks() async {
+    // Update allTasks with current user's tasks
+    allTasks.removeWhere((task) => task.userId == widget.userId);
+    allTasks.addAll(tasks);
+    final taskJson = jsonEncode(allTasks.map((task) => task.toJson()).toList());
+    await _taskBox.put('taskList', taskJson);
   }
 
   @override
@@ -386,12 +474,15 @@ class _TaskManagerScreenState extends State<TaskManagerScreen>
       tasks.add(
         Task(
           id: DateTime.now().toString(),
+          userId: widget.userId,
           title: _titleController.text,
           description: _descriptionController.text,
           category: _selectedCategory,
         ),
       );
     });
+
+    _saveTasks();
 
     _titleController.clear();
     _descriptionController.clear();
@@ -411,6 +502,7 @@ class _TaskManagerScreenState extends State<TaskManagerScreen>
     setState(() {
       tasks.remove(task);
     });
+    _saveTasks();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: const Text('Task deleted'),
@@ -421,6 +513,7 @@ class _TaskManagerScreenState extends State<TaskManagerScreen>
             setState(() {
               tasks.add(task);
             });
+            _saveTasks();
           },
         ),
       ),
@@ -431,6 +524,7 @@ class _TaskManagerScreenState extends State<TaskManagerScreen>
     setState(() {
       task.isCompleted = !task.isCompleted;
     });
+    _saveTasks();
   }
 
   void _showAddTaskDialog() {
@@ -821,6 +915,14 @@ class _TaskManagerScreenState extends State<TaskManagerScreen>
             fontSize: 24,
           ),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              await AuthService().signOut();
+            },
+          ),
+        ],
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
