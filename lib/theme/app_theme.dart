@@ -2,34 +2,38 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  static const Color creamBackground = Color(0xFFF5EFD8);
-  static const Color primaryGreen = Color(0xFF1B5E20);
-  static const Color accentYellow = Color(0xFFFFD54F);
-  static const Color brownOutline = Color(0xFF6D3B1A);
-  static const Color priorityHigh = Color(0xFFE57373);
-  static const Color priorityMedium = Color(0xFFFFB74D);
-  static const Color priorityLow = Color(0xFF81C784);
+  // Brand Colors
+  static const Color creamBackground = Color(0xFFFDFBF7);
+  static const Color primaryGreen = Color(0xFF4DB6AC); // Teal-ish green
+  static const Color accentYellow = Color(0xFFFFD54F); // Duck yellow
+  static const Color brownOutline = Color(0xFF5D4037);
+  
+  // Priority Colors
+  static const Color priorityHigh = Color(0xFFFF7043);
+  static const Color priorityMedium = Color(0xFFFFCA28);
+  static const Color priorityLow = Color(0xFF66BB6A);
 
-  static TextStyle get headingStyle => GoogleFonts.fredoka(
-    fontSize: 28,
-    fontWeight: FontWeight.w700,
-    color: primaryGreen,
-  );
-
-  static TextStyle get subheadingStyle => GoogleFonts.baloo2(
+  // Text Styles
+  static final TextStyle headingStyle = GoogleFonts.fredoka(
     fontSize: 20,
     fontWeight: FontWeight.w600,
-    color: brownOutline,
+    color: const Color(0xFF2D3436),
   );
 
-  static TextStyle get taskTitleStyle => GoogleFonts.baloo2(
-    fontSize: 18,
-    fontWeight: FontWeight.w500,
-    color: Colors.black87,
-  );
-
-  static TextStyle get bodyStyle => GoogleFonts.baloo2(
+  static final TextStyle subheadingStyle = GoogleFonts.baloo2(
     fontSize: 14,
-    color: Colors.black54,
+    fontWeight: FontWeight.w500,
+    color: const Color(0xFF636E72),
+  );
+
+  static final TextStyle taskTitleStyle = GoogleFonts.baloo2(
+    fontSize: 16,
+    fontWeight: FontWeight.w600,
+    color: const Color(0xFF2D3436),
+  );
+  
+  static final TextStyle bodyStyle = GoogleFonts.baloo2(
+    fontSize: 14,
+    color: const Color(0xFF2D3436),
   );
 }

@@ -65,8 +65,8 @@ final streakProvider = Provider<int>((ref) {
 
 // ── Task Notifier (Hive local + Firestore cloud sync) ──
 class TaskNotifier extends Notifier<List<Task>> {
-  late final TaskRepository _localRepo;
-  late final FirestoreTaskRepository _cloudRepo;
+  late TaskRepository _localRepo;
+  late FirestoreTaskRepository _cloudRepo;
 
   @override
   List<Task> build() {
