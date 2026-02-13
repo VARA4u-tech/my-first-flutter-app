@@ -87,6 +87,28 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
     }
   }
 
+  Future<void> _handleGoogleSignIn() async {
+    setState(() {
+      _errorMessage = null;
+      _isLoading = true;
+    });
+
+    try {
+      await _authService.signInWithGoogle();
+      // Success is handled by the AuthGate listener
+    } catch (e) {
+      setState(() {
+        _errorMessage = e.toString().replaceAll('Exception: ', '');
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // Determine greeting based on loop
@@ -323,6 +345,67 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+
+                          // OR Divider
+                          Row(
+                            children: [
+                              Expanded(child: Divider(color: Colors.grey[200])),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                child: Text(
+                                  'OR',
+                                  style: GoogleFonts.fredoka(
+                                    color: Colors.grey[400],
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                              Expanded(child: Divider(color: Colors.grey[200])),
+                            ],
+                          ),
+                          const SizedBox(height: 24),
+
+                          // Google Sign In Button
+                          SizedBox(
+                            height: 56,
+                            child: OutlinedButton(
+                              onPressed: _isLoading ? null : _handleGoogleSignIn,
+                              style: OutlinedButton.styleFrom(
+                                side: BorderSide(color: Colors.grey[200]!),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  // Simplified Google-like G icon using text if SVG is not available
+                                  // but since we have flutter_svg, we can use it if we had a google asset.
+                                  // For now, let's use a nice Icon or a colored G.
+                                  Text(
+                                    'G',
+                                    style: GoogleFonts.fredoka(
+                                      color: Colors.blue,
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    'Continue with Google',
+                                    style: GoogleFonts.fredoka(
+                                      fontSize: 16,
+                                      color: Colors.grey[700],
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ],
