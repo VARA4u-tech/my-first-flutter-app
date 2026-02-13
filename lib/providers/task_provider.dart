@@ -135,12 +135,13 @@ class TaskNotifier extends Notifier<List<Task>> {
   }
 
   Future<void> addTask(String title, TaskPriority priority, int energy,
-      {String category = 'General'}) async {
+      {String category = 'General', DateTime? dueDate}) async {
     final task = Task(
       title: title,
       priority: priority,
       energyLevel: energy,
       category: category,
+      dueDate: dueDate,
     );
 
     // Save locally first (offline-first)

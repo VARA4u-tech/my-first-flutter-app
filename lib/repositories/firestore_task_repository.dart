@@ -23,6 +23,7 @@ class FirestoreTaskRepository {
       'priority': task.priority.index,
       'energyLevel': task.energyLevel,
       'category': task.category,
+      'dueDate': task.dueDate != null ? Timestamp.fromDate(task.dueDate!) : null,
       'createdAt': Timestamp.fromDate(task.createdAt),
     };
   }
@@ -36,6 +37,7 @@ class FirestoreTaskRepository {
       priority: TaskPriority.values[map['priority'] as int? ?? 1],
       energyLevel: map['energyLevel'] as int? ?? 2,
       category: map['category'] as String? ?? 'General',
+      dueDate: (map['dueDate'] as Timestamp?)?.toDate(),
       createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
     );
   }

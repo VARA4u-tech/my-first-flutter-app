@@ -375,6 +375,7 @@ class _AddTaskSheetState extends ConsumerState<AddTaskSheet> {
   TaskPriority _selectedPriority = TaskPriority.medium;
   int _energyLevel = 2;
   String _selectedCategory = 'General';
+  DateTime? _selectedDueDate;
 
   @override
   Widget build(BuildContext context) {
@@ -480,6 +481,52 @@ class _AddTaskSheetState extends ConsumerState<AddTaskSheet> {
             ),
             const SizedBox(height: 20),
 
+            // Due Date / Reminder
+            Text('Due Date', style: AppTheme.subheadingStyle.copyWith(fontSize: 16)),
+            const SizedBox(height: 10),
+            InkWell(
+              onTap: _pickDateTime,
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey[300]!),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.calendar_today,
+                      color: _selectedDueDate != null
+                          ? AppTheme.primaryGreen
+                          : Colors.grey,
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      _selectedDueDate != null
+                          ? '${_selectedDueDate!.day}/${_selectedDueDate!.month}/${_selectedDueDate!.year} at ${_selectedDueDate!.hour}:${_selectedDueDate!.minute.toString().padLeft(2, '0')}'
+                          : 'Set Reminder',
+                      style: GoogleFonts.baloo2(
+                        fontSize: 16,
+                        color: _selectedDueDate != null
+                            ? Colors.black87
+                            : Colors.grey,
+                      ),
+                    ),
+                    if (_selectedDueDate != null) ...[
+                      const Spacer(),
+                      IconButton(
+                        icon: const Icon(Icons.clear, color: Colors.grey),
+                        onPressed: () => setState(() => _selectedDueDate = null),
+                      ),
+                    ]
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+
             // Energy Level
             Text('Energy Level',
                 style: AppTheme.subheadingStyle.copyWith(fontSize: 16)),
@@ -518,7 +565,7 @@ class _AddTaskSheetState extends ConsumerState<AddTaskSheet> {
                   backgroundColor: AppTheme.primaryGreen,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
-                  ),
+                    ),
                   elevation: 0,
                 ),
                 child: Text(
@@ -538,6 +585,33 @@ class _AddTaskSheetState extends ConsumerState<AddTaskSheet> {
     );
   }
 
+  Future<void> _pickDateTime() async {
+    final now = DateTime.now();
+    final date = await showDatePicker(
+      context: context,
+      initialDate: now,
+      firstDate: now,
+      lastDate: DateTime(now.year + 5),
+    );
+    if (date == null) return;
+
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+    );
+    if (time == null) return;
+
+    setState(() {
+      _selectedDueDate = DateTime(
+        date.year,
+        date.month,
+        date.day,
+        time.hour,
+        time.minute,
+      );
+    });
+  }
+
   void _submit() {
     if (_titleController.text.trim().isEmpty) return;
 
@@ -546,6 +620,7 @@ class _AddTaskSheetState extends ConsumerState<AddTaskSheet> {
           _selectedPriority,
           _energyLevel,
           category: _selectedCategory,
+          dueDate: _selectedDueDate,
         );
     Navigator.pop(context);
   }

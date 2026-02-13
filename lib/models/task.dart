@@ -7,6 +7,7 @@ class Task {
   final String title;
   final bool isCompleted;
   final TaskPriority priority;
+  final DateTime? dueDate;
   final int energyLevel; // 1-3 (Low, Medium, High energy required)
   final String category;
   final DateTime createdAt;
@@ -18,6 +19,7 @@ class Task {
     this.priority = TaskPriority.medium,
     this.energyLevel = 2,
     this.category = 'General',
+    this.dueDate,
     DateTime? createdAt,
   })  : id = id ?? const Uuid().v4(),
         createdAt = createdAt ?? DateTime.now();
@@ -28,6 +30,7 @@ class Task {
     TaskPriority? priority,
     int? energyLevel,
     String? category,
+    DateTime? dueDate,
   }) {
     return Task(
       id: id,
@@ -36,7 +39,34 @@ class Task {
       priority: priority ?? this.priority,
       energyLevel: energyLevel ?? this.energyLevel,
       category: category ?? this.category,
+      dueDate: dueDate ?? this.dueDate,
       createdAt: createdAt,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'title': title,
+      'isCompleted': isCompleted,
+      'priorityIndex': priority.index,
+      'energyLevel': energyLevel,
+      'category': category,
+      'dueDate': dueDate?.millisecondsSinceEpoch,
+      'createdAt': createdAt.millisecondsSinceEpoch,
+    };
+  }
+
+  factory Task.fromMap(Map<String, dynamic> map) {
+    return Task(
+      id: map['id'],
+      title: map['title'],
+      isCompleted: map['isCompleted'] ?? false,
+      priority: TaskPriority.values[map['priorityIndex'] ?? 1],
+      energyLevel: map['energyLevel'] ?? 2,
+      category: map['category'] ?? 'General',
+      dueDate: map['dueDate'] != null ? DateTime.fromMillisecondsSinceEpoch(map['dueDate']) : null,
+      createdAt: map['createdAt'] != null ? DateTime.fromMillisecondsSinceEpoch(map['createdAt']) : null,
     );
   }
 }

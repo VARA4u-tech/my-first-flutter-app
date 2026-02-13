@@ -10,16 +10,16 @@ import 'auth_gate.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  
   // Initialize Hive
   await Hive.initFlutter();
   
   // Initialize Task Repository (opens box)
   final taskRepo = TaskRepository();
   await taskRepo.init();
-
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
 
   runApp(
     ProviderScope(
