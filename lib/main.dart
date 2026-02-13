@@ -10,25 +10,51 @@ import 'auth_gate.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-  
-  // Initialize Hive
-  await Hive.initFlutter();
-  
-  // Initialize Task Repository (opens box)
-  final taskRepo = TaskRepository();
-  await taskRepo.init();
+  try {
+    try {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+    } catch (e) {
+      if (e.toString().contains('duplicate-app')) {
+        debugPrint('Firebase already initialized, continuing...');
+      } else {
+        rethrow;
+      }
+    }
+    
+    // Initialize Hive
+    await Hive.initFlutter();
+    
+    // Initialize Task Repository (opens box)
+    final taskRepo = TaskRepository();
+    await taskRepo.init();
 
-  runApp(
-    ProviderScope(
-      overrides: [
-         taskRepositoryProvider.overrideWithValue(taskRepo),
-      ],
-      child: const SmartQuackApp()
-    ),
-  );
+    runApp(
+      ProviderScope(
+        overrides: [
+           taskRepositoryProvider.overrideWithValue(taskRepo),
+        ],
+        child: const SmartQuackApp()
+      ),
+    );
+  } catch (e) {
+    debugPrint('Firebase Initialization Error: $e');
+    runApp(MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Text(
+              'App Setup Error: $e\n\nPlease check your Firebase configuration.',
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.red),
+            ),
+          ),
+        ),
+      ),
+    ));
+  }
 }
 
 class SmartQuackApp extends StatelessWidget {
