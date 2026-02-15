@@ -144,11 +144,12 @@ class TaskNotifier extends Notifier<List<Task>> {
       dueDate: dueDate,
     );
 
-    // Save locally first (offline-first)
-    await _localRepo.addTask(task);
-    state = _sortTasks(_localRepo.getTasks());
+    // 1. Optimistic UI update: update state immediately
+    final newState = [...state, task];
+    state = _sortTasks(newState);
 
-    // Then sync to cloud
+    // 2. Persist in background
+    _localRepo.addTask(task);
     _syncToCloud(() => _cloudRepo.addTask(task));
   }
 
@@ -158,21 +159,23 @@ class TaskNotifier extends Notifier<List<Task>> {
       final task = state[taskIndex];
       final updatedTask = task.copyWith(isCompleted: !task.isCompleted);
 
-      // Save locally first
-      await _localRepo.updateTask(updatedTask);
-      state = _sortTasks(_localRepo.getTasks());
+      // 1. Optimistic UI update
+      final newState = List<Task>.from(state);
+      newState[taskIndex] = updatedTask;
+      state = _sortTasks(newState);
 
-      // Sync to cloud
+      // 2. Persist in background
+      _localRepo.updateTask(updatedTask);
       _syncToCloud(() => _cloudRepo.updateTask(updatedTask));
     }
   }
 
   Future<void> deleteTask(String id) async {
-    // Delete locally first
-    await _localRepo.deleteTask(id);
-    state = _sortTasks(_localRepo.getTasks());
+    // 1. Optimistic UI update
+    state = state.where((t) => t.id != id).toList();
 
-    // Sync to cloud
+    // 2. Persist in background
+    _localRepo.deleteTask(id);
     _syncToCloud(() => _cloudRepo.deleteTask(id));
   }
 

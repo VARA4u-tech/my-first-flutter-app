@@ -54,10 +54,19 @@ class DashboardScreen extends ConsumerWidget {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    'Hello, Pappuri 👋',
-                                    style: AppTheme.headingStyle.copyWith(fontSize: 24),
-                                  ),
+                                  Builder(builder: (context) {
+                                    final user = FirebaseAuth.instance.currentUser;
+                                    final displayName = user?.displayName ?? 
+                                                      (user?.email != null ? user!.email!.split('@')[0] : 'User');
+                                    final name = displayName.isNotEmpty 
+                                        ? displayName[0].toUpperCase() + displayName.substring(1)
+                                        : 'User';
+                                    
+                                    return Text(
+                                      'Hello, $name 👋',
+                                      style: AppTheme.headingStyle.copyWith(fontSize: 24),
+                                    );
+                                  }),
                                   const SizedBox(height: 4),
                                   Text(
                                     _getGreetingText(),

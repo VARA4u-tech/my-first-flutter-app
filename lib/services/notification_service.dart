@@ -1,6 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
+import 'package:flutter_timezone/flutter_timezone.dart';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -14,10 +16,30 @@ class NotificationService {
 
   Future<void> init() async {
     tz.initializeTimeZones();
+    late String timeZoneName;
+    try {
+      timeZoneName = await FlutterTimezone.getLocalTimezone();
+      try {
+        tz.setLocalLocation(tz.getLocation(timeZoneName));
+      } catch (e) {
+        // Fallback for common aliases (e.g., Calcutta -> Kolkata)
+        if (timeZoneName == 'Asia/Calcutta') {
+          tz.setLocalLocation(tz.getLocation('Asia/Kolkata'));
+          timeZoneName = 'Asia/Kolkata';
+        } else {
+          rethrow;
+        }
+      }
+    } catch (e) {
+      debugPrint('Warning: Timezone mapping failed for $timeZoneName, falling back to UTC. Error: $e');
+      tz.setLocalLocation(tz.getLocation('UTC'));
+      timeZoneName = 'UTC';
+    }
+    debugPrint('Notification service initialized with timezone: $timeZoneName');
 
     // Android initialization
     const AndroidInitializationSettings androidSettings =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+        AndroidInitializationSettings('launcher_icon');
 
     // iOS initialization
     final DarwinInitializationSettings iosSettings =
@@ -77,8 +99,8 @@ class NotificationService {
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
-      matchDateTimeComponents: DateTimeComponents.dateAndTime,
     );
+    debugPrint('Scheduled notification for $title at $scheduledDate');
   }
 
   Future<void> cancelNotification(int id) async {

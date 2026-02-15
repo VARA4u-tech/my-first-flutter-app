@@ -24,9 +24,9 @@ class TaskRepository {
     // 1. Save to Hive (Local)
     await _box.put(task.id, task);
 
-    // 2. Schedule Notification
+    // 2. Schedule Notification (Non-blocking)
     if (task.dueDate != null && task.dueDate!.isAfter(DateTime.now())) {
-      await _notificationService.scheduleNotification(
+      _notificationService.scheduleNotification(
         id: task.id.hashCode,
         title: 'Task Reminder',
         body: task.title,
@@ -39,13 +39,13 @@ class TaskRepository {
     // 1. Update Hive
     await _box.put(task.id, task);
 
-    // 2. Update Notification
-    // Cancel existing notification first (just in case time changed or removed)
-    await _notificationService.cancelNotification(task.id.hashCode);
+    // 2. Update Notification (Non-blocking)
+    // Cancel existing notification first
+    _notificationService.cancelNotification(task.id.hashCode);
     
     // Schedule new if needed
     if (!task.isCompleted && task.dueDate != null && task.dueDate!.isAfter(DateTime.now())) {
-      await _notificationService.scheduleNotification(
+      _notificationService.scheduleNotification(
         id: task.id.hashCode,
         title: 'Task Reminder',
         body: task.title,
@@ -58,8 +58,8 @@ class TaskRepository {
     // 1. Delete from Hive
     await _box.delete(id);
 
-    // 2. Cancel Notification
-    await _notificationService.cancelNotification(id.hashCode);
+    // 2. Cancel Notification (Non-blocking)
+    _notificationService.cancelNotification(id.hashCode);
   }
 }
 
